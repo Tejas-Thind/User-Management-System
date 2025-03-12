@@ -1,0 +1,35 @@
+# Defines how to run multiple containers (app and database), and how they interact.
+
+version: '3.9'
+
+services:
+  # Service for the Java application
+  java_app:
+    container_name: java_app  # Name for the container running this service
+    image: tejas/java_app:1.0.0  # Docker image name and tag
+    build: . # To build, look for a Dockerfile in the same directory
+    ports:
+      - 8080:8080
+    environment:  # Environment variables passed to the container
+      - DATABASE_URL=jdbc:postgresql://java_db:5432/postgres
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres
+    depends_on:  # Ensures the database service starts before this service
+    - java_db
+
+  # Service for PostgreSQL database
+  java_db:
+    container_name: java_db  # Name for the container running this service
+    image: postgres:12  # Use official PostgreSQL version 12 image
+    ports:
+      - 5432:5432
+    environment:  # Environment variables for initializing the database
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # Persist database data to a named volume, (ensures database survives when app is restarted)
+
+# Define a named volume to persist PostgreSQL data between container restarts
+volumes:
+  pgdata: {}

@@ -18,17 +18,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/users") // Defines the base URL for user-related endpoints
 public class UserController {
 
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * Retrieves a list of all users.
+     *
+     * @return List of users from the database.
+     */
     @GetMapping
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+    /**
+     * Retrieves a user by their ID.
+     *
+     * @param id The ID of the user to retrieve.
+     * @return ResponseEntity containing the user if found, otherwise an error
+     *         message.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
@@ -42,15 +54,21 @@ public class UserController {
         }
     }
 
+    /**
+     * Creates a new user.
+     *
+     * @param user The user object to be saved.
+     * @return ResponseEntity with the created user and HTTP status.
+     */
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody User user) {
         try {
             userRepository.saveAndFlush(user);
 
-            Map<String, User> response = new HashMap<String, User>();
+            Map<String, User> response = new HashMap<>();
             response.put("user", user);
 
-            return new ResponseEntity<Map<String, User>>(response, HttpStatus.CREATED);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
@@ -58,6 +76,13 @@ public class UserController {
         }
     }
 
+    /**
+     * Updates an existing user's details.
+     *
+     * @param id   The ID of the user to update.
+     * @param user The updated user details.
+     * @return ResponseEntity with the updated user or an error message.
+     */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
         try {
@@ -65,28 +90,28 @@ public class UserController {
             User existingUser = userRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
-            // Update the fields with the new data from the request
+            // Update user fields
             existingUser.setName(user.getName());
             existingUser.setEmail(user.getEmail());
             existingUser.setAge(user.getAge());
             existingUser.setPosition(user.getPosition());
             existingUser.setSalary(user.getSalary());
 
-            // If fileURL is present in the request, update it
+            // Update file URL if present
             if (user.getFileURL() != null) {
                 existingUser.setFileURL(user.getFileURL());
             }
 
-            // Save the updated user back to the database
+            // Save the updated user
             User updatedUser = userRepository.saveAndFlush(existingUser);
 
-            Map<String, User> response = new HashMap<String, User>();
+            Map<String, User> response = new HashMap<>();
             response.put("user", updatedUser);
 
-            return new ResponseEntity<Map<String, User>>(response, HttpStatus.CREATED);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
 
         } catch (OptimisticLockingFailureException e) {
-            // Handle the concurrent modification
+            // Handle concurrent modification error
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "This record was modified by another user. Please refresh and try again.");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
@@ -97,10 +122,16 @@ public class UserController {
         }
     }
 
+    /**
+     * Deletes a user by their ID.
+     *
+     * @param id The ID of the user to delete.
+     * @return ResponseEntity confirming the deletion or an error message.
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
-            // Fetch user to get the name for confirmation message
+            // Fetch user to retrieve name for confirmation message
             User userToBeDeleted = userRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
             String name = userToBeDeleted.getName();
